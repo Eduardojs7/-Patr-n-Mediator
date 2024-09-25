@@ -50,118 +50,116 @@ En este ejemplo, el diálogo de autenticación actúa como mediador. Sabe cómo 
 ```c#
 using System;
 
-namespace RefactoringGuru.DesignPatterns.Mediator.Conceptual
+namespace GestiónDeEventosOficina
 {
-    // The Mediator interface declares a method used by components to notify the
-    // mediator about various events. The Mediator may react to these events and
-    // pass the execution to other components.
-    public interface IMediator
+    // Interfaz que define el mediador
+    public interface ICoordinadorDeEventos
     {
-        void Notify(object sender, string ev);
+        void Notificar(object remitente, string evento);
     }
 
-    // Concrete Mediators implement cooperative behavior by coordinating several
-    // components.
-    class ConcreteMediator : IMediator
+    // Clase que actúa como el mediador concreto
+    class CoordinadorDeEventos : ICoordinadorDeEventos
     {
-        private Component1 _component1;
+        private Empleado _empleado1; // Primer empleado
+        private Empleado _empleado2; // Segundo empleado
 
-        private Component2 _component2;
-
-        public ConcreteMediator(Component1 component1, Component2 component2)
+        // Constructor que establece la relación entre los empleados y el mediador
+        public CoordinadorDeEventos(Empleado empleado1, Empleado empleado2)
         {
-            this._component1 = component1;
-            this._component1.SetMediator(this);
-            this._component2 = component2;
-            this._component2.SetMediator(this);
-        } 
+            this._empleado1 = empleado1;
+            this._empleado1.EstablecerCoordinador(this); // Asigna el mediador al primer empleado
+            this._empleado2 = empleado2;
+            this._empleado2.EstablecerCoordinador(this); // Asigna el mediador al segundo empleado
+        }
 
-        public void Notify(object sender, string ev)
+        // Método que reacciona a las notificaciones de los empleados
+        public void Notificar(object remitente, string evento)
         {
-            if (ev == "A")
+            if (evento == "Reunión")
             {
-                Console.WriteLine("Mediator reacts on A and triggers following operations:");
-                this._component2.DoC();
+                Console.WriteLine("El coordinador reacciona a la Reunión y desencadena las siguientes operaciones:");
+                this._empleado2.EnviarInforme(); // Hace que el segundo empleado envíe un informe
             }
-            if (ev == "D")
+            if (evento == "Fecha límite")
             {
-                Console.WriteLine("Mediator reacts on D and triggers following operations:");
-                this._component1.DoB();
-                this._component2.DoC();
+                Console.WriteLine("El coordinador reacciona a la Fecha límite y desencadena las siguientes operaciones:");
+                this._empleado1.CompilarInforme(); // Hace que el primer empleado compile un informe
+                this._empleado2.EnviarInforme(); // También hace que el segundo empleado envíe un informe
             }
         }
     }
 
-    // The Base Component provides the basic functionality of storing a
-    // mediator's instance inside component objects.
-    class BaseComponent
+    // Clase base para los empleados que contiene el coordinador
+    class EmpleadoBase
     {
-        protected IMediator _mediator;
+        protected ICoordinadorDeEventos _coordinador; // Referencia al mediador
 
-        public BaseComponent(IMediator mediator = null)
+        public EmpleadoBase(ICoordinadorDeEventos coordinador = null)
         {
-            this._mediator = mediator;
+            this._coordinador = coordinador; // Inicializa el coordinador
         }
 
-        public void SetMediator(IMediator mediator)
+        // Método para establecer el mediador
+        public void EstablecerCoordinador(ICoordinadorDeEventos coordinador)
         {
-            this._mediator = mediator;
+            this._coordinador = coordinador;
         }
     }
 
-    // Concrete Components implement various functionality. They don't depend on
-    // other components. They also don't depend on any concrete mediator
-    // classes.
-    class Component1 : BaseComponent
+    // Clase que representa a un empleado
+    class Empleado : EmpleadoBase
     {
-        public void DoA()
-        {
-            Console.WriteLine("Component 1 does A.");
+        public string Nombre { get; set; } // Nombre del empleado
 
-            this._mediator.Notify(this, "A");
+        public Empleado(string nombre, ICoordinadorDeEventos coordinador = null) : base(coordinador)
+        {
+            Nombre = nombre; // Asigna el nombre del empleado
         }
 
-        public void DoB()
+        // Método que simula la preparación para una reunión
+        public void PrepararseParaReunion()
         {
-            Console.WriteLine("Component 1 does B.");
+            Console.WriteLine(Nombre + " se está preparando para la reunión.");
+            this._coordinador.Notificar(this, "Reunión"); // Notifica al mediador
+        }
 
-            this._mediator.Notify(this, "B");
+        // Método que simula la compilación de un informe
+        public void CompilarInforme()
+        {
+            Console.WriteLine(Nombre + " está compilando el informe.");
+            this._coordinador.Notificar(this, "InformeCompilado"); // Notifica al mediador
+        }
+
+        // Método que simula el envío de un informe
+        public void EnviarInforme()
+        {
+            Console.WriteLine(Nombre + " está enviando el informe.");
+            this._coordinador.Notificar(this, "InformeEnviado"); // Notifica al mediador
         }
     }
 
-    class Component2 : BaseComponent
+    // Clase que contiene el punto de entrada de la aplicación
+    public class Programa
     {
-        public void DoC()
+        public static void Main(string[] args)
         {
-            Console.WriteLine("Component 2 does C.");
+            // Creación de los empleados
+            Empleado empleado1 = new Empleado("Alice");
+            Empleado empleado2 = new Empleado("Bob");
 
-            this._mediator.Notify(this, "C");
-        }
+            // Creación del mediador que gestiona a los empleados
+            new CoordinadorDeEventos(empleado1, empleado2);
 
-        public void DoD()
-        {
-            Console.WriteLine("Component 2 does D.");
-
-            this._mediator.Notify(this, "D");
-        }
-    }
-    
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            // The client code.
-            Component1 component1 = new Component1();
-            Component2 component2 = new Component2();
-            new ConcreteMediator(component1, component2);
-
-            Console.WriteLine("Client triggers operation A.");
-            component1.DoA();
+            // Simulación de la preparación para la reunión
+            Console.WriteLine("El cliente desencadena la preparación para la reunión.");
+            empleado1.PrepararseParaReunion();
 
             Console.WriteLine();
 
-            Console.WriteLine("Client triggers operation D.");
-            component2.DoD();
+            // Simulación de la compilación del informe por parte de Bob
+            Console.WriteLine("El cliente desencadena la fecha límite.");
+            empleado2.CompilarInforme();
         }
     }
 }
@@ -170,15 +168,21 @@ namespace RefactoringGuru.DesignPatterns.Mediator.Conceptual
 
 # Output
 <pre>
-Client triggers operation A.
-Component 1 does A.
-Mediator reacts on A and triggers following operations:
-Component 2 does C.
+El cliente desencadena la preparación para la reunión.
+Alice se está preparando para la reunión.
+El coordinador reacciona a la Reunión y desencadena las siguientes operaciones:
+Bob está enviando el informe.
 
-Client triggers operation D.
-Component 2 does D.
-Mediator reacts on D and triggers following operations:
-Component 1 does B.
-Component 2 does C.
+El cliente desencadena la fecha límite.
+Bob está compilando el informe.
+
 </pre>
+# Explicacion
 
+1. **ICoordinadorDeEventos:** Interfaz que declara el método Notificar que los empleados usan para informar al coordinador sobre eventos.
+2. **CoordinadorDeEventos:** Implementación concreta del mediador que coordina las tareas entre los empleados.
+3. **EmpleadoBase:** Clase base para los empleados que almacena una referencia al coordinador.
+4. **Empleado:** Implementación concreta de los empleados con diferentes métodos para realizar tareas. Estos métodos notifican al coordinador sobre eventos específicos.
+5. **Programa:** Ejemplo de cliente que crea empleados y un coordinador, y muestra cómo los empleados interactúan a través del coordinador.
+
+https://dotnetfiddle.net/n1FCqU
